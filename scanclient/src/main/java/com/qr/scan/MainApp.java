@@ -187,9 +187,12 @@ public class MainApp extends JFrame {
         dimension.width = 200;
         button2.setPreferredSize(dimension);
         this.add(toolBar,BorderLayout.NORTH);
-        this.add(list,BorderLayout.WEST);
-        JScrollPane scrollPane = new JScrollPane(contentPanel);
+        JScrollPane scrollLeftPane = new JScrollPane(list);
+        scrollLeftPane.setPreferredSize(new Dimension(200,0));
+        scrollLeftPane.setBorder(BorderFactory.createTitledBorder("摄像头"));
 
+        this.add(scrollLeftPane,BorderLayout.WEST);
+        JScrollPane scrollPane = new JScrollPane(contentPanel);
 
         this.add(scrollPane,BorderLayout.CENTER);
 
@@ -210,8 +213,10 @@ public class MainApp extends JFrame {
         top.add(node2);
         final JTree tree = new JTree(top);
         expandAll(tree, new TreePath(top), true);
-        tree.setPreferredSize(new Dimension(300,0));
-        this.add(tree,BorderLayout.EAST);
+        JScrollPane scrollRightPane = new JScrollPane(tree);
+        scrollRightPane.setBorder(BorderFactory.createTitledBorder("扫描结果"));
+        scrollRightPane.setPreferredSize(new Dimension(200,0));
+        this.add(scrollRightPane,BorderLayout.EAST);
         this.add(button5,BorderLayout.SOUTH);
         this.setBounds(300,200,800,600);
         this.setVisible(true);

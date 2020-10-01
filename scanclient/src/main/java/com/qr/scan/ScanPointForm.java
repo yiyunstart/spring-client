@@ -2,6 +2,7 @@ package com.qr.scan;
 
 import com.qr.scan.entity.Camera;
 import com.qr.scan.mapper.CameraMapper;
+import com.sun.deploy.panel.NumberDocument;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -112,45 +113,11 @@ public class ScanPointForm extends JFrame {
         constraints.weightx=0.0;    //恢复默认值
         constraints.gridwidth = GridBagConstraints.REMAINDER;    //结束行
 
-        JPanel panel = new JPanel();
-//        GroupLayout groupLayout = new GroupLayout(panel);
-        panel.setLayout(new FlowLayout(FlowLayout.LEADING,5,5));
-        JLabel ipLabel=new JLabel("网格大小");
-        JTextField rowsText=new JTextField("3");
 
-        JLabel portLabel=new JLabel("x");
-        JTextField colsText=new JTextField("3");
+//        constraints.gridwidth=GridBagConstraints.REMAINDER;
+//        gbaglayout.setConstraints(panel, constraints);
 //
-//        JLabel userLabel=new JLabel("用户名");
-//        JTextField userText=new JTextField("admin");
-//
-//        JLabel passwdLabel=new JLabel("密码");
-//        JPasswordField passwdText=new JPasswordField("12345678a");
-
-        JButton addButton = new JButton("设置");
-        addButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                cols = Integer.valueOf(rowsText.getText());
-                rows = Integer.valueOf(colsText.getText());
-                reLoadPoint();
-            }
-        });
-
-        panel.add(ipLabel);
-        panel.add(rowsText);
-        panel.add(portLabel);
-        panel.add(colsText);
-//        panel.add(userLabel);
-//        panel.add(userText);
-//        panel.add(passwdLabel);
-//        panel.add(passwdText);
-        panel.add(addButton);
-
-        constraints.gridwidth=GridBagConstraints.REMAINDER;
-        gbaglayout.setConstraints(panel, constraints);
-
-        super.getContentPane().add(panel);
+//        super.getContentPane().add(panel);
 
 
 
@@ -195,8 +162,13 @@ public class ScanPointForm extends JFrame {
         constraints.gridwidth=1;
 //        constraints.gridwidth=GridBagConstraints.REMAINDER;    //结束行
 
-        gbaglayout.setConstraints(list,constraints);
-        super.getContentPane().add(list);
+        JPanel leftPanel = new JPanel();
+        leftPanel.setPreferredSize(new Dimension(200,100));
+        leftPanel.setBorder(BorderFactory.createTitledBorder("摄像头"));
+        leftPanel.setLayout(new BorderLayout());
+        leftPanel.add(list);
+        gbaglayout.setConstraints(leftPanel,constraints);
+        super.getContentPane().add(leftPanel);
 
 
         constraints.weightx=1;    // 指定组件的分配区域
@@ -213,7 +185,201 @@ public class ScanPointForm extends JFrame {
         super.getContentPane().add(scrollPane);
 
         JPanel rightPanel = new JPanel();
-        rightPanel.add(new Button("c2es"));
+        rightPanel.setLayout(new FlowLayout());
+        rightPanel.setPreferredSize(new Dimension(200,0));
+
+
+
+        JPanel panel = new JPanel();
+        panel.setLayout(new FlowLayout(FlowLayout.LEADING,5,5));
+        panel.setBorder(BorderFactory.createTitledBorder("网格大小"));
+        panel.setPreferredSize(new Dimension(200,60));
+        JTextField rowsText=new JTextField();
+        rowsText.setPreferredSize(new Dimension(40,28));
+        rowsText.setHorizontalAlignment(JTextField.CENTER);
+        rowsText.setDocument(new NumberDocument());
+        rowsText.setText(String.valueOf(rows));
+        JLabel portLabel=new JLabel("x");
+        JTextField colsText=new JTextField("3");
+        colsText.setPreferredSize(new Dimension(40,28));
+        colsText.setHorizontalAlignment(JTextField.CENTER);
+        colsText.setDocument(new NumberDocument());
+        colsText.setText(String.valueOf(cols));
+
+        JButton addButton = new JButton("设置");
+        addButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                cols = Integer.valueOf(rowsText.getText());
+                rows = Integer.valueOf(colsText.getText());
+                reLoadPoint();
+            }
+        });
+
+        panel.add(rowsText);
+        panel.add(portLabel);
+        panel.add(colsText);
+        panel.add(addButton);
+        rightPanel.add(panel);
+
+
+        Button leftUpBtn = new Button("左上");
+        Button leftBtn = new Button("左");
+        Button leftDownBtn = new Button("左下");
+        Button upBtn = new Button("上");
+        Button rightUpBtn = new Button("右上");
+        Button rightBtn = new Button("右");
+        Button rightDownBtn = new Button("右下");
+        Button downBtn = new Button("下");
+        Button autoBtn = new Button("自动");
+
+        JPanel movePanel = new JPanel();
+        movePanel.setLayout(new GridLayout(3,6,5,5));
+
+        movePanel.setBorder(BorderFactory.createTitledBorder("方向"));
+        movePanel.add(leftUpBtn);
+        movePanel.add(upBtn);
+        movePanel.add(rightUpBtn);
+        movePanel.add(leftBtn);
+        movePanel.add(autoBtn);
+        movePanel.add(rightBtn);
+        movePanel.add(leftDownBtn);
+        movePanel.add(downBtn);
+        movePanel.add(rightDownBtn);
+        movePanel.setPreferredSize(new Dimension(200,120));
+        rightPanel.add(movePanel);
+
+        JPanel csPanel = new JPanel();
+        csPanel.setLayout(new GridLayout(3,6,5,5));
+        csPanel.setBorder(BorderFactory.createTitledBorder("参数"));
+        csPanel.setPreferredSize(new Dimension(200,120));
+
+        Button tjBtn_1 = new Button("缩");
+        Button tjBtn_2 = new Button("伸");
+        Button jjBtn_1 = new Button("近");
+        Button jjBtn_2 = new Button("远");
+        Button gqBtn_1 = new Button("大");
+        Button gqBtn_2 = new Button("小");
+        csPanel.add(new JLabel("调焦"));
+        csPanel.add(tjBtn_1);
+        csPanel.add(tjBtn_2);
+        csPanel.add(new JLabel("聚焦"));
+        csPanel.add(jjBtn_1);
+        csPanel.add(jjBtn_2);
+        csPanel.add(new JLabel("光圈"));
+        csPanel.add(gqBtn_1);
+        csPanel.add(gqBtn_2);
+        rightPanel.add(csPanel);
+
+        JPanel yzdPanel = new JPanel();
+        yzdPanel.setLayout(new GridLayout(1,3,5,5));
+        yzdPanel.setBorder(BorderFactory.createTitledBorder("预置点"));
+        yzdPanel.setPreferredSize(new Dimension(200,50));
+
+        Button yzd_dyBtn = new Button("调用");
+        Button yzd_szBtn = new Button("设置");
+        Button yzd_scBtn = new Button("删除");
+        yzdPanel.add(yzd_dyBtn);
+        yzdPanel.add(yzd_szBtn);
+        yzdPanel.add(yzd_scBtn);
+
+        rightPanel.add(yzdPanel);
+
+        JPanel jPanelVideoPara = new JPanel();
+
+
+        jPanelVideoPara.setBorder(javax.swing.BorderFactory.createTitledBorder(""));
+        jPanelVideoPara.setLayout(new FlowLayout());
+        jPanelVideoPara.setPreferredSize(new Dimension(200,200));
+
+        Dimension dimensionLabel = new Dimension(40,28);
+        Dimension dimensionSlide = new Dimension(130,28);
+        JLabel jLabel5 = new JLabel("对比度");
+        jLabel5.setPreferredSize(dimensionLabel);
+        jPanelVideoPara.add(jLabel5);
+        JSlider jSliderContrast = new JSlider();
+        jSliderContrast.setPreferredSize(dimensionSlide);
+
+        jSliderContrast.setMaximum(10);
+        jSliderContrast.setMinimum(1);
+        jSliderContrast.setValue(6);
+        jSliderContrast.addChangeListener(new javax.swing.event.ChangeListener() {
+            @Override
+            public void stateChanged(javax.swing.event.ChangeEvent evt) {
+//                jSliderContrastStateChanged(evt);
+            }
+        });
+        jPanelVideoPara.add(jSliderContrast);
+
+
+
+        JLabel jLabel6 = new JLabel("饱和度");
+        jLabel6.setPreferredSize(dimensionLabel);
+        jPanelVideoPara.add(jLabel6);
+        JSlider jSliderSaturation = new JSlider();
+        jSliderSaturation.setPreferredSize(dimensionSlide);
+
+        jSliderSaturation.setMaximum(10);
+        jSliderSaturation.setMinimum(1);
+        jSliderSaturation.setValue(6);
+        jSliderSaturation.addChangeListener(new javax.swing.event.ChangeListener() {
+            @Override
+            public void stateChanged(javax.swing.event.ChangeEvent evt) {
+//                jSliderSaturationStateChanged(evt);
+            }
+        });
+        jPanelVideoPara.add(jSliderSaturation);
+
+        JLabel jLabel7 = new JLabel("色度");
+        jLabel7.setPreferredSize(dimensionLabel);
+        jPanelVideoPara.add(jLabel7);
+        JSlider jSliderHue = new JSlider();
+        jSliderHue.setPreferredSize(dimensionSlide);
+
+        jSliderHue.setMaximum(10);
+        jSliderHue.setMinimum(1);
+        jSliderHue.setValue(6);
+        jSliderHue.addChangeListener(new javax.swing.event.ChangeListener() {
+            @Override
+            public void stateChanged(javax.swing.event.ChangeEvent evt) {
+//                jSliderHueStateChanged(evt);
+            }
+        });
+        jPanelVideoPara.add(jSliderHue);
+
+        JLabel jLabel9 = new JLabel("亮度");
+        jLabel9.setPreferredSize(dimensionLabel);
+        jPanelVideoPara.add(jLabel9);
+        JSlider jSliderBright = new JSlider();
+        jSliderBright.setPreferredSize(dimensionSlide);
+        jSliderBright.setMaximum(10);
+        jSliderBright.setMinimum(1);
+        jSliderBright.setValue(6);
+        jSliderBright.addChangeListener(new javax.swing.event.ChangeListener() {
+            @Override
+            public void stateChanged(javax.swing.event.ChangeEvent evt) {
+//                jSliderBrightStateChanged(evt);
+            }
+        });
+        jPanelVideoPara.add(jSliderBright);
+        rightPanel.add(jPanelVideoPara);
+
+        JButton jButtonDefault = new JButton("默认值");
+//        jButtonDefault.addActionListener(new java.awt.event.ActionListener() {
+//            public void actionPerformed(java.awt.event.ActionEvent evt) {
+//                jButtonDefaultActionPerformed(evt);
+//            }
+//        });
+        jPanelVideoPara.add(jButtonDefault);
+
+
+
+
+
+
+
+
+
         constraints.weightx=0;    // 指定组件的分配区域
         constraints.weighty=0;
         constraints.gridwidth=GridBagConstraints.REMAINDER;    //结束行
