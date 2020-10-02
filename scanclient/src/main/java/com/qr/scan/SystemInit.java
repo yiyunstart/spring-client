@@ -16,12 +16,12 @@ public class SystemInit {
     @Autowired
     private VersionMapper versionMapper;
 
-    String version = "1";
+    String version = "1.1";
     public  void init(boolean force){
         int tablesExists = 0;
         tablesExists = systemMapper.checkTableExistsWithSchema("T_VERSION");
         if(tablesExists==0 || force){
-            systemMapper.initTableVersion(version);
+            systemMapper.initTableVersion();
         }
 
         Version version = versionMapper.selectById(1);
@@ -29,7 +29,7 @@ public class SystemInit {
 
         //检查参数表是否存在
         tablesExists = systemMapper.checkTableExistsWithSchema("T_SYS_PARAM");
-        if(tablesExists==0 || true){
+        if(tablesExists==0 || force){
             log.info("初始化系统参数：");
             systemMapper.initTableSysParam();
         }
@@ -42,7 +42,7 @@ public class SystemInit {
         }
         //检查扫描点表是否存在
         tablesExists = systemMapper.checkTableExistsWithSchema("T_CAMERA_POINT");
-        if(tablesExists==0|| true){
+        if(tablesExists==0|| force){
             log.info("初始化扫描点表：");
             systemMapper.initTableCameraPoint();
         }

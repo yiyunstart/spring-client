@@ -13,7 +13,7 @@ public interface SystemMapper extends BaseMapper {
      * @return
      */
     Integer checkTableExistsWithSchema(@Param("tableName") String tableName);
-    Integer initTableVersion(@Param("version") String version);
+    Integer initTableVersion();
 
     Integer initTableSysParam();
 

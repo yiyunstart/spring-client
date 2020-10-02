@@ -48,10 +48,6 @@ public class CameraConfForm extends JFrame {
         initComponents();
 
         this.setLocationRelativeTo(null);
-        this.addWindowListener(new WindowsEvent());
-//        if(cameraMapper ==null){
-//            cameraMapper =SpringContextUtil.getBean(CameraMapper.class);
-//        }
     }
 
     @Override
@@ -168,6 +164,7 @@ public class CameraConfForm extends JFrame {
                         cameraMapper.updatePasswd(id, value);
                         break;
                 }
+                SpringContextUtil.getBean(MainApp.class).loadCrameraList();
             }
 
         }
@@ -187,7 +184,7 @@ public class CameraConfForm extends JFrame {
 
             cameraMapper.insert(camera);
             loadCameraList();
-
+            SpringContextUtil.getBean(MainApp.class).loadCrameraList();
         }
     }
 
@@ -207,6 +204,7 @@ public class CameraConfForm extends JFrame {
                 Object id = table.getModel().getValueAt(row, 0);
                 log.info("删除ID" + id);
                 cameraMapper.deleteById(String.valueOf(id));
+                SpringContextUtil.getBean(MainApp.class).loadCrameraList();
             }
             for (int row : selectedRows) {
                 DefaultTableModel model = (DefaultTableModel) table.getModel();
@@ -237,43 +235,4 @@ public class CameraConfForm extends JFrame {
         }
     }
 
-    /**
-     * 监听窗口事件，加载数据
-     */
-    private class WindowsEvent implements WindowListener{
-        @Override
-        public void windowOpened(WindowEvent e) {
-//            loadCameraList();
-        }
-
-        @Override
-        public void windowClosing(WindowEvent e) {
-
-        }
-
-        @Override
-        public void windowClosed(WindowEvent e) {
-
-        }
-
-        @Override
-        public void windowIconified(WindowEvent e) {
-
-        }
-
-        @Override
-        public void windowDeiconified(WindowEvent e) {
-
-        }
-
-        @Override
-        public void windowActivated(WindowEvent e) {
-//            loadCameraList();
-        }
-
-        @Override
-        public void windowDeactivated(WindowEvent e) {
-
-        }
-    }
 }
