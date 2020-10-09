@@ -6,8 +6,10 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
+import org.springframework.stereotype.Repository;
 
 @Mapper
+@Repository
 public interface SysParamMapper extends BaseMapper<SysParam> {
 
     @Update("update t_sys_param set value=#{value},create_time=now() where id=#{id}")

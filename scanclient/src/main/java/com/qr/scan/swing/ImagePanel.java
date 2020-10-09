@@ -29,7 +29,7 @@ public class ImagePanel extends JPanel {
         if (image != null) {
             g.drawImage(image, 0, 0, width, height, null);
             g.setColor(Color.RED);
-            g.drawString("图片:" + num, 10, 10);
+            g.drawString("扫描点:" + num, 10, 10);
             if(showBorder){
                 float thickness = 3; //设置宽度
                 Stroke oldStroke = g2.getStroke(); //保存旧笔触

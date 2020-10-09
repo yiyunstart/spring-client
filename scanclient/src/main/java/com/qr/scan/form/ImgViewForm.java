@@ -13,8 +13,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.swing.*;
-import javax.swing.border.Border;
 import java.awt.*;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.util.Arrays;
@@ -32,10 +33,13 @@ public class ImgViewForm extends JFrame {
     @Autowired
     private CameraPointMapper cameraPointMapper;
 
+    @Autowired
+    private MyAppConst myAppConst;
+
     JPanel concentJPanel = new JPanel();
 
-    private static Map<Integer, BufferedImage> images = new HashMap<Integer, BufferedImage>();
-    private static Map<Integer, ImagePanel> imageBoxs = new HashMap<Integer, ImagePanel>();
+//    private static Map<Integer, BufferedImage> images = new HashMap<Integer, BufferedImage>();
+    private static Map<String, JPanel> imageBoxs = new HashMap<String, JPanel>();
     private static int cols = 3;
     private static int rows = 2;
 
@@ -51,9 +55,16 @@ public class ImgViewForm extends JFrame {
         initComponents();
         this.setBounds(200, 200, 800, 600);
         this.setLocationRelativeTo(null);
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                super.componentResized(e);
+                layoutRepaint();
+            }
+        });
     }
 
-    private List<Camera> camera = null;
+    private List<Camera> cameraList = null;
 
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
@@ -106,20 +117,18 @@ public class ImgViewForm extends JFrame {
     }
 
     public void layoutCamera() {
-        camera = SpringContextUtil.getBean(MainApp.class).camerasSelected;
-        int width = camera.size() > 1 ? (concentJPanel.getWidth() - 30) / 2 : concentJPanel.getWidth() - 20;
+        cameraList = SpringContextUtil.getBean(MainApp.class).camerasSelected;
         concentJPanel.removeAll();
-        for (Camera camera : camera) {
+        for (Camera camera : cameraList) {
             JPanel cameraPanel = new JPanel();
             cameraPanel.setBackground(Color.DARK_GRAY);
-            cameraPanel.setPreferredSize(new Dimension(width, width));
+
             cameraPanel.setLayout(new FlowLayout(FlowLayout.TRAILING, 5, 5));
-            int imageWidth = (width - ((camera.getCols() + 1) * 5)) / camera.getCols();
-            int imageHeight = (int)((float)imageWidth/ MyAppConst.video_width*MyAppConst.video_height);
+
             imagePanels.put(camera.getIp(),new HashMap<>());
             for (int i = 0; i < camera.getRows() * camera.getCols(); i++) {
-                ImagePanel imagePanel = new ImagePanel(i);
-                imagePanel.setPreferredSize(new Dimension(imageWidth,imageHeight));
+                ImagePanel imagePanel = new ImagePanel(i+1);
+
 //                if (images.containsKey(i)) {
 //                    BufferedImage bufferedImage = images.get(i);
 //                    imagePanel.image = bufferedImage;
@@ -135,12 +144,36 @@ public class ImgViewForm extends JFrame {
                 cameraPanel.add(imagePanel);
             }
 //            List<CameraPoint> cameraPointList = cameraPointMapper.selectByIp(camera.getIp());
-
+            imageBoxs.put(camera.getIp(),cameraPanel);
             concentJPanel.add(cameraPanel);
         }
-        Arrays.stream(concentJPanel.getComponents()).forEach(component -> {
-            component.setPreferredSize(new Dimension(width, width));
+        layoutRepaint();
+
+
+    }
+
+    private void layoutRepaint(){
+        int width = cameraList.size() > 1 ? (concentJPanel.getWidth() - 30) / 2 : concentJPanel.getWidth() - 20;
+
+        imagePanels.forEach((ip,imgPanelMap)->{
+            Camera camera = null;
+            for(int i = 0; i< cameraList.size(); i++){
+                camera = cameraList.get(i);
+                if(camera.getIp().equals(ip)){
+                    break;
+                }
+            }
+            int imageWidth = (width - ((camera.getCols() + 1) * 5)) / camera.getCols();
+            int imageHeight = (int)((float)imageWidth/ myAppConst.video_width*myAppConst.video_height);
+            imgPanelMap.forEach((pointName,imgPanl)->{
+                imgPanl.setPreferredSize(new Dimension(imageWidth,imageHeight));
+            });
+
+            imageBoxs.get(ip).setPreferredSize(new Dimension(width, imageHeight*camera.getRows()+((camera.getRows() + 1) * 5)));
         });
+//        Arrays.stream(concentJPanel.getComponents()).forEach(component -> {
+//            component.setPreferredSize(new Dimension(width, width));
+//        });
         concentJPanel.repaint();
         concentJPanel.revalidate();
     }

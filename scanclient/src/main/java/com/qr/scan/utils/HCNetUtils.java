@@ -8,6 +8,8 @@ import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
 import com.sun.jna.examples.win32.W32API;
 import com.sun.jna.ptr.IntByReference;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -18,13 +20,19 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+@Service
 public class HCNetUtils {
     static HCNetSDK hCNetSDK = HCNetSDK.INSTANCE;
 
-    public static NativeLong getRealHandle(String ip) {
+    @Autowired
+    private MyAppConst myAppConst;
+
+    public  NativeLong getRealHandle(String ip) {
 
         return lPreviewHandleMap.get(ip);
     }
+
+
 
     /*************************************************
      函数名:    PTZControlAll
@@ -36,7 +44,7 @@ public class HCNetUtils {
      输出参数:
      返回值:
      *************************************************/
-    public static void PTZControlAll(Component component, Camera camera, int iPTZCommand, int iStop, int iSpeed) {
+    public  void PTZControlAll(Component component, Camera camera, int iPTZCommand, int iStop, int iSpeed) {
 //        int iSpeed = jComboBoxSpeed.getSelectedIndex();
         NativeLong lRealHandle = lPreviewHandleMap.get(camera.getIp());
         if (lRealHandle.intValue() >= 0) {
@@ -62,7 +70,7 @@ public class HCNetUtils {
     private static Map<String, NativeLong> lUserIDMap = new HashMap<String, NativeLong>();
     private static Map<String, NativeLong> lPreviewHandleMap = new HashMap<String, NativeLong>();
 
-    public static NativeLong register(Component parentComponent, Camera camera) {
+    public  NativeLong register(Component parentComponent, Camera camera) {
 //        Camera camera = cameraMapper.selectByIp(ip);
 //        m_sDeviceIP = jTextFieldIPAddress.getText();//设备ip地址
         HCNetSDK.NET_DVR_DEVICEINFO_V30 m_strDeviceInfo = new HCNetSDK.NET_DVR_DEVICEINFO_V30();
@@ -86,7 +94,7 @@ public class HCNetUtils {
     /**
      * 获取截图
      */
-    public static BufferedImage getPreviewImageToBufferdImage(String ip) {
+    public  BufferedImage getPreviewImageToBufferdImage(String ip) {
         final byte[] imageData = getPreviewImage(ip);
         BufferedImage bufferedImage = null;
         try {
@@ -100,7 +108,7 @@ public class HCNetUtils {
     /**
      * 获取截图
      */
-    public static byte[] getPreviewImage(String ip) {
+    public  byte[] getPreviewImage(String ip) {
         NativeLong lUserID = lUserIDMap.get(ip);
         if (lUserID == null) {
             return null;
@@ -108,13 +116,13 @@ public class HCNetUtils {
         HCNetSDK.NET_DVR_JPEGPARA jpeginfo = new HCNetSDK.NET_DVR_JPEGPARA();
         jpeginfo.wPicQuality = 2;
         jpeginfo.wPicSize = 0;
-        int dwPicSize = MyAppConst.video_width * MyAppConst.video_height;
+        int dwPicSize = myAppConst.video_width * myAppConst.video_height;
         IntByReference lpSizeReturned = new IntByReference();
         lpSizeReturned.setValue(0);
         NativeLong DVRChannel = new NativeLong();
 //        DVRChannel.setValue(getChannelNumber());
         DVRChannel.setValue(1);
-        Pointer p = new Memory(MyAppConst.video_width * MyAppConst.video_height);
+        Pointer p = new Memory(myAppConst.video_width * myAppConst.video_height);
 
         hCNetSDK.NET_DVR_CaptureJPEGPicture_NEW(lUserID, DVRChannel, jpeginfo, p, dwPicSize, lpSizeReturned);
         byte[] imageData = p.getByteArray(0, lpSizeReturned.getValue());
@@ -122,14 +130,14 @@ public class HCNetUtils {
         return imageData;
     }
 
-    public static void previewClose(Camera camera) {
+    public  void previewClose(Camera camera) {
         NativeLong lRealHandle = getRealHandle(camera.getIp());
         //停止预览
         hCNetSDK.NET_DVR_StopRealPlay(lRealHandle);
     }
 
     //预览
-    public static NativeLong preview(Component parentComponent, Panel panel, Camera camera) {
+    public  NativeLong preview(Component parentComponent, Panel panel, Camera camera) {
 
         //获取窗口句柄
         W32API.HWND hwnd = new W32API.HWND(Native.getComponentPointer(panel));
@@ -179,7 +187,7 @@ public class HCNetUtils {
     }
 
 
-    public static boolean gotoPoint(Camera camera,int point) {
+    public  boolean gotoPoint(Camera camera,int point) {
 
         NativeLong lPreviewHandle = getRealHandle(camera.getIp());
         boolean ret = hCNetSDK.NET_DVR_PTZPreset(lPreviewHandle
@@ -187,12 +195,12 @@ public class HCNetUtils {
         return  ret;
     }
 
-    public static BufferedImage getBufferedImage(Camera camera){
+    public  BufferedImage getBufferedImage(Camera camera){
         NativeLong lUserID = lUserIDMap.get(camera.getIp());
         HCNetSDK.NET_DVR_JPEGPARA jpeginfo = new HCNetSDK.NET_DVR_JPEGPARA();
         jpeginfo.wPicQuality = 2;
         jpeginfo.wPicSize = 0;
-        int dwPicSize = MyAppConst.video_width * MyAppConst.video_height;
+        int dwPicSize = myAppConst.video_width * myAppConst.video_height;
         IntByReference lpSizeReturned = new IntByReference();
         lpSizeReturned.setValue(0);
         NativeLong DVRChannel = new NativeLong();

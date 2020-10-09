@@ -1,5 +1,6 @@
 package com.qr.scan.form;
 
+import com.qr.scan.MyAppConst;
 import com.qr.scan.entity.SysParam;
 import com.qr.scan.mapper.SysParamMapper;
 import lombok.extern.java.Log;
@@ -28,6 +29,8 @@ public class SysParamConfForm extends JFrame {
     @Autowired
     private SysParamMapper sysParamMapper;
 
+    @Autowired
+    private MyAppConst myAppConst;
 
     public SysParamConfForm() {
         initComponents();
@@ -101,7 +104,7 @@ public class SysParamConfForm extends JFrame {
 
 
     /**
-     * 修改摄像头值事件
+     * 修改值事件
      */
     private class TableListener implements TableModelListener {
 
@@ -112,6 +115,7 @@ public class SysParamConfForm extends JFrame {
                 Object value = tableModel.getValueAt(e.getFirstRow(), e.getColumn());
                 Object id = tableModel.getValueAt(e.getFirstRow(), 0);
                 sysParamMapper.updateValue(id, value);
+                myAppConst.reLoad();
             }
 
         }

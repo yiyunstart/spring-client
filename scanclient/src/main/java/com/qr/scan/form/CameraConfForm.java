@@ -183,7 +183,8 @@ public class CameraConfForm extends JFrame {
             camera.setPort(portText.getText());
             camera.setUsername(userText.getText());
             camera.setPasswd(passwdText.getText());
-
+            camera.setCols(3);
+            camera.setRows(3);
             cameraMapper.insert(camera);
             loadCameraList();
             SpringContextUtil.getBean(MainApp.class).loadCrameraList();

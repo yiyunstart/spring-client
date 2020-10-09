@@ -16,6 +16,9 @@ public class SystemInit {
     @Autowired
     private VersionMapper versionMapper;
 
+    @Autowired
+    private MyAppConst myAppConst;
+
     String version = "1.1";
     public  void init(boolean force){
         int tablesExists = 0;
@@ -47,5 +50,7 @@ public class SystemInit {
             systemMapper.initTableCameraPoint();
         }
 
+
+        myAppConst.reLoad();
     }
 }

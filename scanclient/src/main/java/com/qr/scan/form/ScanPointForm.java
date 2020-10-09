@@ -59,6 +59,10 @@ public class ScanPointForm extends JFrame {
     private CameraPointMapper cameraPointMapper;
     @Autowired
     private TestScanForm testScanForm;
+    @Autowired
+    private MyAppConst myAppConst;
+    @Autowired
+    private HCNetUtils netUtils;
 
     private JTextField rowsText = new JTextField();
     private JTextField colsText = new JTextField();
@@ -120,7 +124,7 @@ public class ScanPointForm extends JFrame {
                 width = 200;
             }
 
-            int height = (int) ((float) width / MyAppConst.video_width * MyAppConst.video_height);
+            int height = (int) ((float) width / myAppConst.video_width * myAppConst.video_height);
             showFullPanel.setPreferredSize(new Dimension(width,height));
             showFullJPanel.setPreferredSize(
                     new Dimension(width, height + 60));
@@ -138,7 +142,7 @@ public class ScanPointForm extends JFrame {
                 width = previewWidth * this.cols+(previewMarginWidth * (this.cols + 1))+20;
             }
 
-            int previewHeight = (int) ((float) previewWidth / MyAppConst.video_width * MyAppConst.video_height);
+            int previewHeight = (int) ((float) previewWidth / myAppConst.video_width * myAppConst.video_height);
 
             final int PreviewWidth = previewWidth;
             previewVideoPanels.forEach((key, value) -> {
@@ -488,7 +492,7 @@ public class ScanPointForm extends JFrame {
         @Override
         public void actionPerformed(ActionEvent e) {
 
-            NativeLong realHandle = HCNetUtils.getRealHandle(camera.getIp());
+            NativeLong realHandle = netUtils.getRealHandle(camera.getIp());
             hCNetSDK.NET_DVR_StopRealPlay(realHandle);
 
             CameraPoint cameraPoint = getListByName(cameraPoints, pointName);
@@ -555,20 +559,20 @@ public class ScanPointForm extends JFrame {
             JButton source = (JButton) e.getSource();
             if (source.getActionCommand().equals(EXEC_EVENT_LOADVIDEO)) {
 //                preview(pointName);
-                HCNetUtils.preview(thiz, previewVideoPanels.get(pointName), camera);
+                netUtils.preview(thiz, previewVideoPanels.get(pointName), camera);
 
                 source.setText("确定");
                 source.setActionCommand(EXEC_EVENT_SAVE);
                 previewCancelBtns.get(pointName).setVisible(true);
             } else if (source.getActionCommand().equals(EXEC_EVENT_SAVE)) {
 
-                if (!hCNetSDK.NET_DVR_PTZPreset(HCNetUtils.getRealHandle(camera.getIp()), HCNetSDK.SET_PRESET, Integer.valueOf(pointName)))
+                if (!hCNetSDK.NET_DVR_PTZPreset(netUtils.getRealHandle(camera.getIp()), HCNetSDK.SET_PRESET, Integer.valueOf(pointName)))
                 {
                     JOptionPane.showMessageDialog(thiz, "设置预置点失败");
                     return;
                 }
                 CameraPoint cameraPoint = cameraPointMapper.selectByName(camera.getIp(), pointName);
-                byte[] previewImage = HCNetUtils.getPreviewImage(camera.getIp());
+                byte[] previewImage = netUtils.getPreviewImage(camera.getIp());
 
                 BufferedImage bufferedImage = null;
                 try {
@@ -605,7 +609,7 @@ public class ScanPointForm extends JFrame {
                 source.setText("修改");
                 source.setActionCommand(EXEC_EVENT_LOADVIDEO);
                 previewCancelBtns.get(pointName).setVisible(false);
-                HCNetUtils.previewClose(camera);
+                netUtils.previewClose(camera);
 
                 layoutSet(previewVideoPanels.get(pointName),source,cameraPoint);
             }
@@ -708,12 +712,12 @@ public class ScanPointForm extends JFrame {
      *************************************************/
     private class LeftUpAction extends MouseAdapter {
         public void mousePressed(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.UP_LEFT, 0, 0);
+            netUtils.PTZControlAll(thiz, camera, HCNetSDK.UP_LEFT, 0, 0);
 
         }
 
         public void mouseReleased(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.UP_LEFT, 1, 0);
+            netUtils.PTZControlAll(thiz, camera, HCNetSDK.UP_LEFT, 1, 0);
 
         }
     }
@@ -724,12 +728,12 @@ public class ScanPointForm extends JFrame {
      *************************************************/
     private class RightDownAction extends MouseAdapter {
         public void mousePressed(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.DOWN_RIGHT, 0, 0);
+            netUtils.PTZControlAll(thiz, camera, HCNetSDK.DOWN_RIGHT, 0, 0);
 
         }
 
         public void mouseReleased(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.DOWN_RIGHT, 1, 0);
+            netUtils.PTZControlAll(thiz, camera, HCNetSDK.DOWN_RIGHT, 1, 0);
 
         }
     }
@@ -740,12 +744,12 @@ public class ScanPointForm extends JFrame {
      *************************************************/
     private class UpMouseAction extends MouseAdapter {
         public void mousePressed(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.TILT_UP, 0, 0);
+            netUtils.PTZControlAll(thiz, camera, HCNetSDK.TILT_UP, 0, 0);
 
         }
 
         public void mouseReleased(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.TILT_UP, 1, 0);
+            netUtils.PTZControlAll(thiz, camera, HCNetSDK.TILT_UP, 1, 0);
 
         }
     }
@@ -756,12 +760,12 @@ public class ScanPointForm extends JFrame {
      *************************************************/
     private class DownMouseAction extends MouseAdapter {
         public void mousePressed(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.TILT_DOWN, 0, 0);
+            netUtils.PTZControlAll(thiz, camera, HCNetSDK.TILT_DOWN, 0, 0);
 
         }
 
         public void mouseReleased(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.TILT_DOWN, 1, 0);
+            netUtils.PTZControlAll(thiz, camera, HCNetSDK.TILT_DOWN, 1, 0);
 
         }
     }
@@ -773,12 +777,12 @@ public class ScanPointForm extends JFrame {
      *************************************************/
     private class RightUpMouseAction extends MouseAdapter {
         public void mousePressed(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.UP_RIGHT, 0, 0);
+            netUtils.PTZControlAll(thiz, camera, HCNetSDK.UP_RIGHT, 0, 0);
 
         }
 
         public void mouseReleased(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.UP_RIGHT, 1, 0);
+            netUtils.PTZControlAll(thiz, camera, HCNetSDK.UP_RIGHT, 1, 0);
         }
     }
 
@@ -789,12 +793,12 @@ public class ScanPointForm extends JFrame {
 
     private class LeftDownMouseAction extends MouseAdapter {
         public void mousePressed(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.DOWN_LEFT, 0, 0);
+            netUtils.PTZControlAll(thiz, camera, HCNetSDK.DOWN_LEFT, 0, 0);
 
         }
 
         public void mouseReleased(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.DOWN_LEFT, 1, 0);
+            netUtils.PTZControlAll(thiz, camera, HCNetSDK.DOWN_LEFT, 1, 0);
         }
     }
 
@@ -805,12 +809,12 @@ public class ScanPointForm extends JFrame {
      *************************************************/
     private class LeftMouseAction extends MouseAdapter {
         public void mousePressed(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.PAN_LEFT, 0, 0);
+            netUtils.PTZControlAll(thiz, camera, HCNetSDK.PAN_LEFT, 0, 0);
 
         }
 
         public void mouseReleased(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.PAN_LEFT, 1, 0);
+            netUtils.PTZControlAll(thiz, camera, HCNetSDK.PAN_LEFT, 1, 0);
         }
     }
 
@@ -820,12 +824,12 @@ public class ScanPointForm extends JFrame {
      *************************************************/
     private class RightMouseAction extends MouseAdapter {
         public void mousePressed(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.PAN_RIGHT, 0, 0);
+            netUtils.PTZControlAll(thiz, camera, HCNetSDK.PAN_RIGHT, 0, 0);
 
         }
 
         public void mouseReleased(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.PAN_RIGHT, 1, 0);
+            netUtils.PTZControlAll(thiz, camera, HCNetSDK.PAN_RIGHT, 1, 0);
         }
     }
 
@@ -835,12 +839,12 @@ public class ScanPointForm extends JFrame {
      *************************************************/
     private class ZoomInAction extends MouseAdapter {
         public void mousePressed(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.ZOOM_IN, 0, 0);
+            netUtils.PTZControlAll(thiz, camera, HCNetSDK.ZOOM_IN, 0, 0);
 
         }
 
         public void mouseReleased(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.ZOOM_IN, 1, 0);
+            netUtils.PTZControlAll(thiz, camera, HCNetSDK.ZOOM_IN, 1, 0);
 
         }
     }
@@ -851,12 +855,12 @@ public class ScanPointForm extends JFrame {
      *************************************************/
     private class ZoomOutAction extends MouseAdapter {
         public void mousePressed(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.ZOOM_OUT, 0, 0);
+            netUtils.PTZControlAll(thiz, camera, HCNetSDK.ZOOM_OUT, 0, 0);
 
         }
 
         public void mouseReleased(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.ZOOM_OUT, 1, 0);
+            netUtils.PTZControlAll(thiz, camera, HCNetSDK.ZOOM_OUT, 1, 0);
 
         }
     }
@@ -867,12 +871,12 @@ public class ScanPointForm extends JFrame {
      *************************************************/
     private class FocusNearAction extends MouseAdapter {
         public void mousePressed(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.FOCUS_NEAR, 0, 0);
+            netUtils.PTZControlAll(thiz, camera, HCNetSDK.FOCUS_NEAR, 0, 0);
 
         }
 
         public void mouseReleased(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.FOCUS_NEAR, 1, 0);
+            netUtils.PTZControlAll(thiz, camera, HCNetSDK.FOCUS_NEAR, 1, 0);
 
         }
     }
@@ -883,12 +887,12 @@ public class ScanPointForm extends JFrame {
      *************************************************/
     private class FocusFarAction extends MouseAdapter {
         public void mousePressed(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.FOCUS_FAR, 0, 0);
+            netUtils.PTZControlAll(thiz, camera, HCNetSDK.FOCUS_FAR, 0, 0);
 
         }
 
         public void mouseReleased(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.FOCUS_FAR, 1, 0);
+            netUtils.PTZControlAll(thiz, camera, HCNetSDK.FOCUS_FAR, 1, 0);
 
         }
     }
@@ -899,12 +903,12 @@ public class ScanPointForm extends JFrame {
      *************************************************/
     private class IrisOpenAction extends MouseAdapter {
         public void mousePressed(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.IRIS_OPEN, 0, 0);
+            netUtils.PTZControlAll(thiz, camera, HCNetSDK.IRIS_OPEN, 0, 0);
 
         }
 
         public void mouseReleased(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.IRIS_OPEN, 1, 0);
+            netUtils.PTZControlAll(thiz, camera, HCNetSDK.IRIS_OPEN, 1, 0);
         }
     }
 
@@ -914,11 +918,11 @@ public class ScanPointForm extends JFrame {
      *************************************************/
     private class IrisCloseAction extends MouseAdapter {
         public void mousePressed(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.IRIS_CLOSE, 0, 0);
+            netUtils.PTZControlAll(thiz, camera, HCNetSDK.IRIS_CLOSE, 0, 0);
         }
 
         public void mouseReleased(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.IRIS_CLOSE, 1, 0);
+            netUtils.PTZControlAll(thiz, camera, HCNetSDK.IRIS_CLOSE, 1, 0);
         }
     }
 
@@ -932,7 +936,7 @@ public class ScanPointForm extends JFrame {
 
 
     private boolean setVideoEffect() {
-        if (!hCNetSDK.NET_DVR_ClientSetVideoEffect(HCNetUtils.getRealHandle(camera.getIp()), m_iBrightness, m_iContrast, m_iSaturation, m_iHue)) {
+        if (!hCNetSDK.NET_DVR_ClientSetVideoEffect(netUtils.getRealHandle(camera.getIp()), m_iBrightness, m_iContrast, m_iSaturation, m_iHue)) {
             JOptionPane.showMessageDialog(this, "设置预览视频显示参数失败");
             return false;
         } else {
@@ -975,7 +979,7 @@ public class ScanPointForm extends JFrame {
             testScanForm.setLocationRelativeTo(null);
             testScanForm.setVisible(true);
 
-            BufferedImage bufferedImage = HCNetUtils.getBufferedImage(camera);
+            BufferedImage bufferedImage = netUtils.getBufferedImage(camera);
             Result[] results = QrcodeUtils.decodeQRcode(bufferedImage);
             bufferedImage = QrcodeUtils.printImg(bufferedImage, results);
             testScanForm.showImage(bufferedImage,results);
