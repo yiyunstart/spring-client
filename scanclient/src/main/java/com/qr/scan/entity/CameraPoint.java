@@ -15,8 +15,10 @@ public class CameraPoint {
     @TableId(type= IdType.AUTO)
     private Long id;
     private String cameraIp;
-    private String name ;
+    private int name ;
     private String image;
+    private int testQrCount;
+    private String testImage;
     private String createTime;
 
 }

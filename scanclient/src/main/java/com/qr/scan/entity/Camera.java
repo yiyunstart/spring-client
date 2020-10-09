@@ -25,4 +25,13 @@ public class Camera {
     private int cols;
     private String createTime;
 
+    @Override
+    public boolean equals(Object o) {
+        if (o instanceof Camera) {
+            Camera question = (Camera) o;
+            return this.ip.equals(question.ip);
+        }
+        return super.equals(o);
+    }
+
 }

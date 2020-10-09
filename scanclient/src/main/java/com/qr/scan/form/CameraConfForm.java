@@ -1,5 +1,7 @@
-package com.qr.scan;
+package com.qr.scan.form;
 
+import com.qr.scan.MainApp;
+import com.qr.scan.SpringContextUtil;
 import com.qr.scan.entity.Camera;
 import com.qr.scan.mapper.CameraMapper;
 import lombok.extern.java.Log;
@@ -54,7 +56,7 @@ public class CameraConfForm extends JFrame {
     public void setVisible(boolean b) {
         super.setVisible(b);
         if(cameraMapper ==null){
-            cameraMapper =SpringContextUtil.getBean(CameraMapper.class);
+            cameraMapper = SpringContextUtil.getBean(CameraMapper.class);
         }
         loadCameraList();
     }

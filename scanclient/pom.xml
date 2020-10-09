@@ -103,20 +103,20 @@
             <artifactId>lombok</artifactId>
         </dependency>
 
-        <!-- https://mvnrepository.com/artifact/org.bytedeco/opencv -->
-        <dependency>
-            <groupId>org.bytedeco</groupId>
-            <artifactId>opencv</artifactId>
-            <version>4.4.0-1.5.4</version>
-        </dependency>
+<!--        &lt;!&ndash; https://mvnrepository.com/artifact/org.bytedeco/opencv &ndash;&gt;-->
+<!--        <dependency>-->
+<!--            <groupId>org.bytedeco</groupId>-->
+<!--            <artifactId>opencv</artifactId>-->
+<!--            <version>4.4.0-1.5.4</version>-->
+<!--        </dependency>-->
 
-        <!-- https://mvnrepository.com/artifact/org.bytedeco/opencv -->
-        <dependency>
-            <groupId>org.bytedeco</groupId>
-            <artifactId>javacv-platform</artifactId>
-            <version>1.5.4</version>
-            <!--            <classifier>windows-x86_64</classifier>-->
-        </dependency>
+<!--        &lt;!&ndash; https://mvnrepository.com/artifact/org.bytedeco/opencv &ndash;&gt;-->
+<!--        <dependency>-->
+<!--            <groupId>org.bytedeco</groupId>-->
+<!--            <artifactId>javacv-platform</artifactId>-->
+<!--            <version>1.5.4</version>-->
+<!--            &lt;!&ndash;            <classifier>windows-x86_64</classifier>&ndash;&gt;-->
+<!--        </dependency>-->
 
         <!-- https://mvnrepository.com/artifact/com.google.zxing/zxing-parent -->
         <dependency>

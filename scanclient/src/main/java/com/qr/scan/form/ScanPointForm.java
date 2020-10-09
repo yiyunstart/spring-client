@@ -1,11 +1,16 @@
-package com.qr.scan;
+package com.qr.scan.form;
 
+import com.google.zxing.Result;
+import com.qr.scan.MyAppConst;
+import com.qr.scan.swing.MyJcheckBox;
+import com.qr.scan.VideoPanel;
 import com.qr.scan.entity.Camera;
 import com.qr.scan.entity.CameraPoint;
 import com.qr.scan.mapper.CameraMapper;
 import com.qr.scan.mapper.CameraPointMapper;
 import com.qr.scan.utils.HCNetSDK;
 import com.qr.scan.utils.HCNetUtils;
+import com.qr.scan.utils.QrcodeUtils;
 import com.sun.deploy.panel.NumberDocument;
 import com.sun.jna.Native;
 import com.sun.jna.NativeLong;
@@ -25,6 +30,8 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -36,25 +43,27 @@ import java.util.Map;
 @Component
 public class ScanPointForm extends JFrame {
     private static JPanel contentPanel = new JPanel();    //创建面板
-    private static Map<String, JPanel> previewPanels = new HashMap<String, JPanel>();    //创建面板
-    private static Map<String, VideoPanel> previewVideoPanels = new HashMap<String, VideoPanel>();    //创建面板
-    private static Map<String, JButton> previewCancelBtns = new HashMap<String, JButton>();    //创建面板
-    private static Map<String, JButton> previewExecBtns = new HashMap<String, JButton>();    //创建面板
+    private static Map<Integer, JPanel> previewPanels = new HashMap<Integer, JPanel>();    //创建面板
+    private static Map<Integer, VideoPanel> previewVideoPanels = new HashMap<Integer, VideoPanel>();    //创建面板
+    private static Map<Integer, JButton> previewCancelBtns = new HashMap<Integer, JButton>();    //创建面板
+    private static Map<Integer, JButton> previewExecBtns = new HashMap<Integer, JButton>();    //创建面板
     private static String EXEC_EVENT_LOADVIDEO = "loadVideo";
     private static String EXEC_EVENT_SAVE = "save";
 
     private static JScrollPane scrollPane = new JScrollPane(contentPanel);
-    private JList list = new JList();
+    private JList<Camera> list = new JList<Camera>();
     private JFrame thiz = null;
     @Autowired
     private CameraMapper cameraMapper;
     @Autowired
     private CameraPointMapper cameraPointMapper;
+    @Autowired
+    private TestScanForm testScanForm;
 
     private JTextField rowsText = new JTextField();
     private JTextField colsText = new JTextField();
     private int rows = 3, cols = 3; //网格行数和列数，对于摄像头点的布局
-    private String ip = null;
+//    private String ip = null;
 
 
     static HCNetSDK hCNetSDK = HCNetSDK.INSTANCE;
@@ -100,6 +109,8 @@ public class ScanPointForm extends JFrame {
 
 
     private void reLayoutPoint() {
+
+
         //计算内容布局大小
         if (showFull) {
             int width = (scrollPane.getWidth() - 20);
@@ -160,6 +171,8 @@ public class ScanPointForm extends JFrame {
     JSlider jSliderHue = new JSlider();
     JSlider jSliderBright = new JSlider();
 
+    JTextField QrcodeCountText = new JTextField("0");
+
     private void initComponents() {
 
         //向JPanel添加FlowLayout布局管理器，将组件间的横向和纵向间隙都设置为20像素
@@ -208,8 +221,11 @@ public class ScanPointForm extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 rows = Integer.valueOf(rowsText.getText());
                 cols = Integer.valueOf(colsText.getText());
-                cameraMapper.updateGrid(ip, rows, cols);
-                reLayoutPoint();
+                cameraMapper.updateGrid(camera.getIp(), rows, cols);
+                //重新加载数据
+                camera =  cameraMapper.selectByIp(camera.getIp());
+                cameraPoints = cameraPointMapper.selectByIp(camera.getIp());
+                reLoadPoint();
             }
         });
 
@@ -290,16 +306,17 @@ public class ScanPointForm extends JFrame {
         rightPanel.add(csPanel);
 
         JPanel yzdPanel = new JPanel();
-        yzdPanel.setLayout(new GridLayout(1, 3, 5, 5));
-        yzdPanel.setBorder(BorderFactory.createTitledBorder("预置点"));
-        yzdPanel.setPreferredSize(new Dimension(200, 50));
-
-        JButton yzd_dyBtn = new JButton("调用");
-        JButton yzd_szBtn = new JButton("设置");
-        JButton yzd_scBtn = new JButton("删除");
+        yzdPanel.setLayout(new FlowLayout(FlowLayout.LEADING,5,5));
+        yzdPanel.setBorder(BorderFactory.createTitledBorder("扫码测试"));
+        yzdPanel.setPreferredSize(new Dimension(200, 80));
+        JLabel label = new JLabel("数量");
+        QrcodeCountText.setPreferredSize(new Dimension(60, 28));
+        JButton yzd_dyBtn = new JButton("扫描");
+        yzdPanel.add(label);
+        yzdPanel.add(QrcodeCountText);
         yzdPanel.add(yzd_dyBtn);
-        yzdPanel.add(yzd_szBtn);
-        yzdPanel.add(yzd_scBtn);
+
+        yzd_dyBtn.addActionListener(new TestScanQrcodeAction());
 
         rightPanel.add(yzdPanel);
 
@@ -366,9 +383,9 @@ public class ScanPointForm extends JFrame {
 
     }
 
-    private CameraPoint getListByName(List<CameraPoint> cameraPoints, String name) {
+    private CameraPoint getListByName(List<CameraPoint> cameraPoints, int name) {
         for (int i = 0; i < cameraPoints.size(); i++) {
-            if (cameraPoints.get(i).getName().equals(name)) {
+            if (cameraPoints.get(i).getName()==name) {
                 return cameraPoints.get(i);
             }
         }
@@ -391,27 +408,28 @@ public class ScanPointForm extends JFrame {
 //
 //        contentPanelWidth = scrollPane.getWidth() - 20;
 //        contentPanelHeigh = (previewWidth + 20) * cols;
-        previewPanels = new HashMap<String, JPanel>();
+        previewPanels = new HashMap<Integer, JPanel>();
         contentPanel.removeAll();
 
         for (int i = 0; i < rows * cols; i++) {
-            String pointName = String.valueOf(i + 1);
+            int pointName = i + 1;
             CameraPoint cameraPoint = getListByName(cameraPoints, pointName);
             JPanel jPanel1 = new JPanel();
 //            jPanel1.setPreferredSize(new Dimension(previewWidth, 0));
-            jPanel1.setName(pointName);
-            jPanel1.add(new JLabel(ip + ":扫描点" + pointName));
+//            jPanel1.setName();
+            jPanel1.add(new JLabel(camera.getIp() + ":扫描点" + pointName));
             VideoPanel videoPanel = new VideoPanel();
-            videoPanel.setName(pointName);
+            videoPanel.setName(String.valueOf(pointName));
 
 //            videoPanel.setPreferredSize(new Dimension(previewWidth, (int) ((float) previewWidth / MyAppConst.video_width * MyAppConst.video_height)));
             previewPanels.put(pointName, jPanel1);
             previewVideoPanels.put(pointName, videoPanel);
             jPanel1.add(videoPanel);
-            videoPanel.addMouseListener(new previewPanelMouseAction());
-            JButton beginSetBtn = new JButton("设置");
-            beginSetBtn.setActionCommand(EXEC_EVENT_LOADVIDEO);
-            previewExecBtns.put(pointName,beginSetBtn);
+            videoPanel.addMouseListener(new previewPanelMouseAction(pointName));
+            JButton execBtn = new JButton("设置");
+            execBtn.setActionCommand(EXEC_EVENT_LOADVIDEO);
+            execBtn.addActionListener(new previewVideoAction(pointName, jPanel1));
+            previewExecBtns.put(pointName,execBtn);
             JButton beginCancelBtn = new JButton("取消");
             previewCancelBtns.put(pointName,beginCancelBtn);
             beginCancelBtn.setVisible(false);
@@ -419,13 +437,12 @@ public class ScanPointForm extends JFrame {
 
             videoPanel.setLayout(new BorderLayout());
             if (cameraPoint == null) {
-                layoutUnSet(videoPanel,beginSetBtn);
+                layoutUnSet(videoPanel,execBtn);
             } else {
-                layoutSet(videoPanel,beginSetBtn,cameraPoint);
+                layoutSet(videoPanel,execBtn,cameraPoint);
             }
-            beginSetBtn.addActionListener(new previewVideoAction(pointName, jPanel1));
             jPanel1.add(beginCancelBtn);
-            jPanel1.add(beginSetBtn);
+            jPanel1.add(execBtn);
             contentPanel.add(jPanel1);
 //            contentPanel.setPreferredSize(new Dimension(contentPanelWidth, contentPanelHeigh));
 //            contentPanel.repaint();
@@ -464,8 +481,8 @@ public class ScanPointForm extends JFrame {
         }
     }
     private class PreviewCancelAction implements ActionListener{
-        private String pointName;
-        public PreviewCancelAction(String pointName){
+        private int pointName;
+        public PreviewCancelAction(int pointName){
             this.pointName = pointName;
         }
         @Override
@@ -488,13 +505,16 @@ public class ScanPointForm extends JFrame {
     }
 
     private class previewPanelMouseAction extends MouseAdapter {
+        int pointName;
+        public previewPanelMouseAction(int pointName){
+            this.pointName = pointName;
+        }
         @Override
         public void mousePressed(java.awt.event.MouseEvent evt) {
-            System.out.println(evt.getComponent().getName());
             if (evt.getClickCount() == 2) { //双击放大
                 if (showFull) {
                     previewPanels.forEach((key, value) -> {
-                        if (!key.equals(evt.getComponent().getName())) {
+                        if (!key.equals(this.pointName)) {
                             value.setVisible(true);
                         }
                     });
@@ -503,13 +523,13 @@ public class ScanPointForm extends JFrame {
                     showFullJPanel = null;
                 } else {
                     previewPanels.forEach((key, value) -> {
-                        if (!key.equals(evt.getComponent().getName())) {
+                        if (!key.equals(this.pointName)) {
                             value.setVisible(false);
                         }
                     });
                     showFull = true;
-                    showFullJPanel = previewPanels.get(evt.getComponent().getName());
-                    showFullPanel = previewVideoPanels.get(evt.getComponent().getName());
+                    showFullJPanel = previewPanels.get(this.pointName);
+                    showFullPanel = previewVideoPanels.get(this.pointName);
                 }
             }
             reLayoutPoint();
@@ -522,10 +542,10 @@ public class ScanPointForm extends JFrame {
     }
 
     private class previewVideoAction implements ActionListener {
-        private String pointName;
+        private int pointName;
         private JPanel parentPanel;
 
-        public previewVideoAction(String pointName, JPanel parentPanel) {
+        public previewVideoAction(int pointName, JPanel parentPanel) {
             this.pointName = pointName;
             this.parentPanel = parentPanel;
         }
@@ -535,7 +555,6 @@ public class ScanPointForm extends JFrame {
             JButton source = (JButton) e.getSource();
             if (source.getActionCommand().equals(EXEC_EVENT_LOADVIDEO)) {
 //                preview(pointName);
-                Camera camera = cameraMapper.selectByIp(ip);
                 HCNetUtils.preview(thiz, previewVideoPanels.get(pointName), camera);
 
                 source.setText("确定");
@@ -548,23 +567,47 @@ public class ScanPointForm extends JFrame {
                     JOptionPane.showMessageDialog(thiz, "设置预置点失败");
                     return;
                 }
-                CameraPoint cameraPoint = cameraPointMapper.selectByName(ip, pointName);
-                byte[] previewImage = HCNetUtils.getPreviewImage(ip);
-                String imageBase64 = Base64Utils.encodeToString(previewImage);
+                CameraPoint cameraPoint = cameraPointMapper.selectByName(camera.getIp(), pointName);
+                byte[] previewImage = HCNetUtils.getPreviewImage(camera.getIp());
+
+                BufferedImage bufferedImage = null;
+                try {
+                    bufferedImage = ImageIO.read(new ByteArrayInputStream(previewImage));
+                } catch (IOException ioException) {
+                    ioException.printStackTrace();
+                }
+
+                Result[] results = QrcodeUtils.decodeQRcode(bufferedImage);
+                bufferedImage = QrcodeUtils.printImg(bufferedImage, results);
+
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                try {
+                    ImageIO.write(bufferedImage, "jpg", out);
+                } catch (IOException ioException) {
+                    ioException.printStackTrace();
+                }
+
+                String imageBase64 = Base64Utils.encodeToString(out.toByteArray());
                 if (cameraPoint == null) {
                     cameraPoint = new CameraPoint();
-                    cameraPoint.setCameraIp(ip.toString());
-                    cameraPoint.setName(pointName);
+                    cameraPoint.setCameraIp(camera.getIp());
+                    cameraPoint.setName(Integer.valueOf(pointName));
                     cameraPoint.setCreateTime(DateFormatUtils.format(new Date(), "yyyy-MM-dd HH:mm:ss"));
-
+                    cameraPoint.setTestQrCount(Integer.valueOf(QrcodeCountText.getText()));
                     cameraPoint.setImage(imageBase64);
+                    cameraPoint.setTestQrCount(results.length);
                     cameraPointMapper.insert(cameraPoint);
                 } else {
                     cameraPoint.setImage(imageBase64);
+                    cameraPoint.setTestQrCount(results.length);
                     cameraPointMapper.updateById(cameraPoint);
                 }
                 source.setText("修改");
                 source.setActionCommand(EXEC_EVENT_LOADVIDEO);
+                previewCancelBtns.get(pointName).setVisible(false);
+                HCNetUtils.previewClose(camera);
+
+                layoutSet(previewVideoPanels.get(pointName),source,cameraPoint);
             }
 
 //            JButton beginSetBtn = new JButton("取消");
@@ -597,13 +640,9 @@ public class ScanPointForm extends JFrame {
 
     private void loadCrameraList() {
         List<Camera> cameras = cameraMapper.selectList(null);
-        Object[] vData = new Object[cameras.size()];
-
-        for (int i = 0; i < cameras.size(); i++) {
-            Camera camera = cameras.get(i);
-            vData[i] = camera.getIp();
-        }
-        list.setListData(vData);
+        Camera[] cameraArr = new Camera[cameras.size()];
+        cameras.toArray(cameraArr);
+        list.setListData(cameraArr);
 
     }
 
@@ -614,9 +653,8 @@ public class ScanPointForm extends JFrame {
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        ip = list.getSelectedValue().toString();
-                        camera = cameraMapper.selectByIp(ip);
-                        cameraPoints = cameraPointMapper.selectByIp(ip);
+                        camera =  list.getSelectedValue();
+                        cameraPoints = cameraPointMapper.selectByIp(camera.getIp());
                         reLoadPoint();
                     }
                 }).start();
@@ -670,12 +708,12 @@ public class ScanPointForm extends JFrame {
      *************************************************/
     private class LeftUpAction extends MouseAdapter {
         public void mousePressed(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, ip, HCNetSDK.UP_LEFT, 0, 0);
+            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.UP_LEFT, 0, 0);
 
         }
 
         public void mouseReleased(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, ip, HCNetSDK.UP_LEFT, 1, 0);
+            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.UP_LEFT, 1, 0);
 
         }
     }
@@ -686,12 +724,12 @@ public class ScanPointForm extends JFrame {
      *************************************************/
     private class RightDownAction extends MouseAdapter {
         public void mousePressed(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, ip, HCNetSDK.DOWN_RIGHT, 0, 0);
+            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.DOWN_RIGHT, 0, 0);
 
         }
 
         public void mouseReleased(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, ip, HCNetSDK.DOWN_RIGHT, 1, 0);
+            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.DOWN_RIGHT, 1, 0);
 
         }
     }
@@ -702,12 +740,12 @@ public class ScanPointForm extends JFrame {
      *************************************************/
     private class UpMouseAction extends MouseAdapter {
         public void mousePressed(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, ip, HCNetSDK.TILT_UP, 0, 0);
+            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.TILT_UP, 0, 0);
 
         }
 
         public void mouseReleased(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, ip, HCNetSDK.TILT_UP, 1, 0);
+            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.TILT_UP, 1, 0);
 
         }
     }
@@ -718,12 +756,12 @@ public class ScanPointForm extends JFrame {
      *************************************************/
     private class DownMouseAction extends MouseAdapter {
         public void mousePressed(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, ip, HCNetSDK.TILT_DOWN, 0, 0);
+            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.TILT_DOWN, 0, 0);
 
         }
 
         public void mouseReleased(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, ip, HCNetSDK.TILT_DOWN, 1, 0);
+            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.TILT_DOWN, 1, 0);
 
         }
     }
@@ -735,12 +773,12 @@ public class ScanPointForm extends JFrame {
      *************************************************/
     private class RightUpMouseAction extends MouseAdapter {
         public void mousePressed(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, ip, HCNetSDK.UP_RIGHT, 0, 0);
+            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.UP_RIGHT, 0, 0);
 
         }
 
         public void mouseReleased(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, ip, HCNetSDK.UP_RIGHT, 1, 0);
+            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.UP_RIGHT, 1, 0);
         }
     }
 
@@ -751,12 +789,12 @@ public class ScanPointForm extends JFrame {
 
     private class LeftDownMouseAction extends MouseAdapter {
         public void mousePressed(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, ip, HCNetSDK.DOWN_LEFT, 0, 0);
+            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.DOWN_LEFT, 0, 0);
 
         }
 
         public void mouseReleased(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, ip, HCNetSDK.DOWN_LEFT, 1, 0);
+            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.DOWN_LEFT, 1, 0);
         }
     }
 
@@ -767,12 +805,12 @@ public class ScanPointForm extends JFrame {
      *************************************************/
     private class LeftMouseAction extends MouseAdapter {
         public void mousePressed(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, ip, HCNetSDK.PAN_LEFT, 0, 0);
+            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.PAN_LEFT, 0, 0);
 
         }
 
         public void mouseReleased(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, ip, HCNetSDK.PAN_LEFT, 1, 0);
+            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.PAN_LEFT, 1, 0);
         }
     }
 
@@ -782,12 +820,12 @@ public class ScanPointForm extends JFrame {
      *************************************************/
     private class RightMouseAction extends MouseAdapter {
         public void mousePressed(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, ip, HCNetSDK.PAN_RIGHT, 0, 0);
+            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.PAN_RIGHT, 0, 0);
 
         }
 
         public void mouseReleased(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, ip, HCNetSDK.PAN_RIGHT, 1, 0);
+            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.PAN_RIGHT, 1, 0);
         }
     }
 
@@ -797,12 +835,12 @@ public class ScanPointForm extends JFrame {
      *************************************************/
     private class ZoomInAction extends MouseAdapter {
         public void mousePressed(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, ip, HCNetSDK.ZOOM_IN, 0, 0);
+            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.ZOOM_IN, 0, 0);
 
         }
 
         public void mouseReleased(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, ip, HCNetSDK.ZOOM_IN, 1, 0);
+            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.ZOOM_IN, 1, 0);
 
         }
     }
@@ -813,12 +851,12 @@ public class ScanPointForm extends JFrame {
      *************************************************/
     private class ZoomOutAction extends MouseAdapter {
         public void mousePressed(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, ip, HCNetSDK.ZOOM_OUT, 0, 0);
+            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.ZOOM_OUT, 0, 0);
 
         }
 
         public void mouseReleased(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, ip, HCNetSDK.ZOOM_OUT, 1, 0);
+            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.ZOOM_OUT, 1, 0);
 
         }
     }
@@ -829,12 +867,12 @@ public class ScanPointForm extends JFrame {
      *************************************************/
     private class FocusNearAction extends MouseAdapter {
         public void mousePressed(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, ip, HCNetSDK.FOCUS_NEAR, 0, 0);
+            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.FOCUS_NEAR, 0, 0);
 
         }
 
         public void mouseReleased(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, ip, HCNetSDK.FOCUS_NEAR, 1, 0);
+            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.FOCUS_NEAR, 1, 0);
 
         }
     }
@@ -845,12 +883,12 @@ public class ScanPointForm extends JFrame {
      *************************************************/
     private class FocusFarAction extends MouseAdapter {
         public void mousePressed(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, ip, HCNetSDK.FOCUS_FAR, 0, 0);
+            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.FOCUS_FAR, 0, 0);
 
         }
 
         public void mouseReleased(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, ip, HCNetSDK.FOCUS_FAR, 1, 0);
+            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.FOCUS_FAR, 1, 0);
 
         }
     }
@@ -861,12 +899,12 @@ public class ScanPointForm extends JFrame {
      *************************************************/
     private class IrisOpenAction extends MouseAdapter {
         public void mousePressed(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, ip, HCNetSDK.IRIS_OPEN, 0, 0);
+            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.IRIS_OPEN, 0, 0);
 
         }
 
         public void mouseReleased(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, ip, HCNetSDK.IRIS_OPEN, 1, 0);
+            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.IRIS_OPEN, 1, 0);
         }
     }
 
@@ -876,11 +914,11 @@ public class ScanPointForm extends JFrame {
      *************************************************/
     private class IrisCloseAction extends MouseAdapter {
         public void mousePressed(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, ip, HCNetSDK.IRIS_CLOSE, 0, 0);
+            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.IRIS_CLOSE, 0, 0);
         }
 
         public void mouseReleased(java.awt.event.MouseEvent evt) {
-            HCNetUtils.PTZControlAll(thiz, ip, HCNetSDK.IRIS_CLOSE, 1, 0);
+            HCNetUtils.PTZControlAll(thiz, camera, HCNetSDK.IRIS_CLOSE, 1, 0);
         }
     }
 
@@ -894,7 +932,7 @@ public class ScanPointForm extends JFrame {
 
 
     private boolean setVideoEffect() {
-        if (!hCNetSDK.NET_DVR_ClientSetVideoEffect(HCNetUtils.getRealHandle(ip), m_iBrightness, m_iContrast, m_iSaturation, m_iHue)) {
+        if (!hCNetSDK.NET_DVR_ClientSetVideoEffect(HCNetUtils.getRealHandle(camera.getIp()), m_iBrightness, m_iContrast, m_iSaturation, m_iHue)) {
             JOptionPane.showMessageDialog(this, "设置预览视频显示参数失败");
             return false;
         } else {
@@ -929,5 +967,20 @@ public class ScanPointForm extends JFrame {
     }
 
 
+    public class TestScanQrcodeAction implements ActionListener {
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            testScanForm.setBounds(200, 200, 800, 600);
+            testScanForm.setLocationRelativeTo(null);
+            testScanForm.setVisible(true);
+
+            BufferedImage bufferedImage = HCNetUtils.getBufferedImage(camera);
+            Result[] results = QrcodeUtils.decodeQRcode(bufferedImage);
+            bufferedImage = QrcodeUtils.printImg(bufferedImage, results);
+            testScanForm.showImage(bufferedImage,results);
+            QrcodeCountText.setText(String.valueOf(results.length));
+        }
+    }
 
 }

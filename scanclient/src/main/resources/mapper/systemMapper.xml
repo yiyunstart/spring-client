@@ -29,6 +29,9 @@
                                  create_time TIMESTAMP
         );
         insert into t_sys_param(id, name, code, value, remark,type_code, create_time) VALUES (1,'扫描点跳转时间','JumpPointTime','4','单位秒','sys',now());
+        insert into t_sys_param(id, name, code, value, remark,type_code, create_time) VALUES (2,'扫码最大重试次数','maxScan','5','扫不到二维码时重试次数','sys',now());
+        insert into t_sys_param(id, name, code, value, remark,type_code, create_time) VALUES (3,'视频像素宽','videoWidth','2560','px','sys',now());
+        insert into t_sys_param(id, name, code, value, remark,type_code, create_time) VALUES (4,'视频像素高','videoHeight','1440','px','sys',now());
     </update>
     <update id="initTableCamera">
         drop table if exists t_camera;
@@ -49,8 +52,10 @@
         create table t_camera_point(
                                  id int auto_increment primary key not null ,
                                  camera_ip varchar(50) not null,
-                                 name varchar(50) null,
+                                 name int null,
                                  image text null,
+                                 test_qr_count int null,
+                                 status varchar(1) null,
                                  create_time TIMESTAMP
         );
     </update>

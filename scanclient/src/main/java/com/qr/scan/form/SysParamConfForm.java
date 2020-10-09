@@ -1,4 +1,4 @@
-package com.qr.scan;
+package com.qr.scan.form;
 
 import com.qr.scan.entity.SysParam;
 import com.qr.scan.mapper.SysParamMapper;
