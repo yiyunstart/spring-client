@@ -3,8 +3,10 @@ package com.qr.scan.mapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.springframework.stereotype.Repository;
 
 @Mapper
+@Repository
 public interface SystemMapper extends BaseMapper {
     /**
      * 使用information_schema检查表是否存在

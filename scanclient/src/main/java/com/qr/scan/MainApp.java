@@ -3,14 +3,12 @@ package com.qr.scan;
 import com.google.zxing.Result;
 import com.qr.scan.entity.Camera;
 import com.qr.scan.entity.CameraPoint;
-import com.qr.scan.entity.SysParam;
 import com.qr.scan.form.CameraConfForm;
 import com.qr.scan.form.ImgViewForm;
 import com.qr.scan.form.ScanPointForm;
 import com.qr.scan.form.SysParamConfForm;
 import com.qr.scan.mapper.CameraMapper;
 import com.qr.scan.mapper.CameraPointMapper;
-import com.qr.scan.mapper.SysParamMapper;
 import com.qr.scan.utils.HCNetSDK;
 import com.qr.scan.utils.HCNetUtils;
 import com.qr.scan.utils.QrcodeUtils;
@@ -22,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ApplicationContext;
+import org.springframework.scheduling.annotation.Async;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -57,7 +56,6 @@ public class MainApp extends JFrame {
     SystemInit systemInit;
 
 
-
     @Autowired
     MyAppConst myAppConst;
     @Autowired
@@ -71,19 +69,16 @@ public class MainApp extends JFrame {
 
 
     private JScrollPane contentScrollPane = null;
-//    private JList<Camera> cameraJList = new JList<Camera>();
     private static JPanel contentJPanel = new JPanel();
     private static Map<String, JPanel> previewPanels = new HashMap<String, JPanel>();
     private static Map<String, Panel> previewVideoPanels = new HashMap<String, Panel>();
     JPanel leftJPanel = new JPanel();
 
-    private  List<Camera> camerasAll =null; //所有的摄像头信息
-    public List<Camera> camerasSelected =null; //当前选中的摄像头信息
-    public  Map<String,CameraScanRet> cameraScanRets = null;//扫描结果缓存
+    private List<Camera> camerasAll = null; //所有的摄像头信息
+    public List<Camera> camerasSelected = null; //当前选中的摄像头信息
+    public Map<String, CameraScanRet> cameraScanRets = null;//扫描结果缓存
 
     static HCNetSDK hCNetSDK = HCNetSDK.INSTANCE;
-
-
 
 
     public MainApp() {
@@ -129,7 +124,7 @@ public class MainApp extends JFrame {
     }
 
     //渲染顶菜单
-    private void layoutTopMenuBar(){
+    private void layoutTopMenuBar() {
 
         //顶部菜单
         JMenuBar menuBar = new JMenuBar();
@@ -166,7 +161,7 @@ public class MainApp extends JFrame {
         });
     }
 
-    private void layoutTopBtn(){
+    private void layoutTopBtn() {
         JPanel topPanel = new JPanel();
         JButton scanBtn = new JButton("开始扫描");
         scanBtn.addActionListener(new ScanQrcodeAction());
@@ -178,22 +173,11 @@ public class MainApp extends JFrame {
     }
 
     //渲染左侧摄像探头列表
-    private void layoutLeftPanel(){
-
-//        MyJcheckBox cell = new MyJcheckBox();
-//        cameraJList.setCellRenderer(cell);
-//        cameraJList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-//        DefaultListSelectionModel defaultListSelectionModel = new MultipleListSelectionModel() ;
-//        defaultListSelectionModel.addListSelectionListener(new SharedListSelectionHandler());
-//        cameraJList.setSelectionModel(defaultListSelectionModel);
-//
-//        JScrollPane scrollLeftPane = new JScrollPane(cameraJList);
-//        scrollLeftPane.setPreferredSize(new Dimension(200, 0));
-//        scrollLeftPane.setBorder(BorderFactory.createTitledBorder("摄像头"));
+    private void layoutLeftPanel() {
 
 
         leftJPanel.setBorder(BorderFactory.createTitledBorder("摄像头"));
-        leftJPanel.setLayout(new FlowLayout(FlowLayout.LEADING,5,5));
+        leftJPanel.setLayout(new FlowLayout(FlowLayout.LEADING, 5, 5));
         leftJPanel.setPreferredSize(new Dimension(200, 0));
 
 
@@ -202,7 +186,7 @@ public class MainApp extends JFrame {
     }
 
     //设置右侧面板
-    private void layoutRightPanel(){
+    private void layoutRightPanel() {
 
         root_node = new DefaultMutableTreeNode("扫描结果");
 
@@ -259,27 +243,20 @@ public class MainApp extends JFrame {
 
     public void loadCrameraList() {
         camerasAll = cameraMapper.selectList(null);
-//        Camera[] cameraArr = new Camera[camerasAll.size()];
-//        camerasAll.toArray(cameraArr);
-//        cameraJList.setListData(cameraArr);
-        //摄像头不为空选中第一个
-//        if(cameras!=null && list.getSelectedValuesList().size()==0){
-//            list.setSelectedIndex(0);
-//        }
         leftJPanel.removeAll();
-        for(Camera camera:camerasAll){
+        for (Camera camera : camerasAll) {
             JLabel label = new JLabel(camera.getIp());
-            label.setSize(new Dimension(140,30));
+            label.setSize(new Dimension(140, 30));
             JButton button = null;
-            if(previewVideoPanels.get(camera.getIp())==null) {
+            if (previewVideoPanels.get(camera.getIp()) == null) {
                 button = new JButton("打开");
                 button.setActionCommand("open");
-            }else{
+            } else {
                 button = new JButton("关闭");
                 button.setActionCommand("close");
             }
             button.addActionListener(new CameraExecAdction(camera));
-            button.setPreferredSize(new Dimension(60,30));
+            button.setPreferredSize(new Dimension(60, 30));
             leftJPanel.add(label);
             leftJPanel.add(button);
         }
@@ -325,16 +302,18 @@ public class MainApp extends JFrame {
         }
     }
 
-    private class CameraExecAdction implements ActionListener{
+    private class CameraExecAdction implements ActionListener {
         private Camera camera;
-        public CameraExecAdction(Camera camera){
+
+        public CameraExecAdction(Camera camera) {
             this.camera = camera;
         }
+
         @Override
         public void actionPerformed(ActionEvent e) {
-            JButton source = (JButton)e.getSource();
+            JButton source = (JButton) e.getSource();
 
-            if(e.getActionCommand().equals("close")){
+            if (e.getActionCommand().equals("close")) {
                 source.setText("打开");
                 source.setActionCommand("open");
                 netUtils.previewClose(camera);
@@ -345,22 +324,20 @@ public class MainApp extends JFrame {
                 camerasSelected.remove(camera);
 
                 DefaultMutableTreeNode ipNode = find(root_node, camera.getIp());
-                if(ipNode!=null) {
-//                    DefaultMutableTreeNode treeNode = new DefaultMutableTreeNode(camera.getIp());
+                if (ipNode != null) {
                     root_node.remove(ipNode);
                     myDefaultTreeModel.reload();
                 }
-
                 layoutContenPanel();
                 return;
             }
 
 
-            if(previewPanels.containsKey(this.camera.getIp())){
+            if (previewPanels.containsKey(this.camera.getIp())) {
                 return;
             }
 
-            if(camerasSelected==null){
+            if (camerasSelected == null) {
                 camerasSelected = new ArrayList<>();
 
             }
@@ -369,25 +346,21 @@ public class MainApp extends JFrame {
 
 
             Panel jPanel1 = new Panel();
-//            jPanel1.setPreferredSize(new Dimension(previewWidth, previewHeight));
             jPanel1.setVisible(true);
             JPanel jpanel = new JPanel();
             jpanel.add(new JLabel(camera.getIp()));
             jpanel.add(jPanel1);
             jpanel.setName(camera.getIp());
-//            jpanel.setPreferredSize(new Dimension(previewWidth, previewHeight+30));
-
 
             previewPanels.put(jpanel.getName(), jpanel);
-            previewVideoPanels.put(camera.getIp(),jPanel1);
+            previewVideoPanels.put(camera.getIp(), jPanel1);
             contentJPanel.add(jpanel);
             DefaultMutableTreeNode ipNode = find(root_node, camera.getIp());
-            if(ipNode==null) {
+            if (ipNode == null) {
                 DefaultMutableTreeNode treeNode = new DefaultMutableTreeNode(camera.getIp());
                 root_node.add(treeNode);
                 myDefaultTreeModel.reload();
             }
-
 
             source.setText("关闭");
             source.setActionCommand("close");
@@ -403,91 +376,23 @@ public class MainApp extends JFrame {
         }
     }
 
-    private void layoutContenPanel(){
-        int previewWidth = camerasSelected.size()>1? contentScrollPane.getWidth()/2-15: contentScrollPane.getWidth()-10;
-        int previewHeight =(int) (myAppConst.video_height * ((float) previewWidth / myAppConst.video_width));
-        contentJPanel.setPreferredSize(new Dimension(contentScrollPane.getWidth(),camerasSelected.size()/2*(previewHeight+10)));
-        previewVideoPanels.forEach((key,value)->{
+    private void layoutContenPanel() {
+        int previewWidth = camerasSelected.size() > 1 ? contentScrollPane.getWidth() / 2 - 15 : contentScrollPane.getWidth() - 10;
+        int previewHeight = (int) (myAppConst.video_height * ((float) previewWidth / myAppConst.video_width));
+        contentJPanel.setPreferredSize(new Dimension(contentScrollPane.getWidth(), camerasSelected.size() / 2 * (previewHeight + 10)));
+        previewVideoPanels.forEach((key, value) -> {
             value.setPreferredSize(new Dimension(previewWidth, previewHeight));
         });
-        previewPanels.forEach((key,value)->{
-            value.setPreferredSize(new Dimension(previewWidth, previewHeight+30));
+        previewPanels.forEach((key, value) -> {
+            value.setPreferredSize(new Dimension(previewWidth, previewHeight + 30));
         });
         contentJPanel.revalidate();
     }
-//    //列表选中事件
-//    class SharedListSelectionHandler implements ListSelectionListener {
-//        @Override
-//        public void valueChanged(ListSelectionEvent e) {
-//
-//            camerasSelected = cameraJList.getSelectedValuesList();
-//            imgViewForm.layoutCamera();
-//            //先判断移除
-//            List removeList = new ArrayList();
-//            for (Object ip : previewPanels.keySet()) {
-//                boolean exists = false;
-//                for(Camera camera:camerasSelected){
-//                    if (camera.getIp().equals(ip)) {
-//                        exists = true;
-//                    }
-//                }
-//                if(!exists){
-//                    contentJPanel.remove(previewPanels.get(ip));
-//                    removeList.add(ip);
-//                }
-//
-//            }
-//            for (Object removeIP : removeList) {
-//                previewPanels.remove(removeIP);
-//            }
-//
-//            contentJPanel.repaint();
-//
-//            int previewWidth = camerasSelected.size()>1? contentScrollPane.getWidth()/2-15: contentScrollPane.getWidth()-10;
-//            int previewHeight =(int) (MyAppConst.video_height * ((float) previewWidth / MyAppConst.video_width));
-//            contentJPanel.setPreferredSize(new Dimension(contentScrollPane.getWidth(),camerasSelected.size()/2*(previewHeight+10)));
-//
-//
-//
-//            for (Camera camera : camerasSelected) {
-//                if (previewPanels.containsKey(camera.getIp())) {
-//                    continue;
-//                }
-//                Panel jPanel1 = new MyVideoPanel(root);
-//                jPanel1.setPreferredSize(new Dimension(previewWidth, previewHeight));
-//                jPanel1.setVisible(true);
-//                JPanel jpanel = new JPanel();
-//                jpanel.add(new JLabel(camera.getIp()));
-//                jpanel.add(jPanel1);
-//                jpanel.setName(camera.getIp());
-//                jpanel.setPreferredSize(new Dimension(previewWidth, previewHeight+30));
-//
-//
-//                previewPanels.put(jpanel.getName(), jpanel);
-//                previewVideoPanels.put(camera.getIp(),jPanel1);
-//                contentJPanel.add(jpanel);
-//                DefaultMutableTreeNode treeNode = new DefaultMutableTreeNode(camera.getIp());
-//                root_node.add(treeNode);
-//                myDefaultTreeModel.reload();
-//
-//                netUtils.preview(root, previewVideoPanels.get(camera.getIp()), camera);
-//            }
-//
-//            previewVideoPanels.forEach((key,value)->{
-//                value.setPreferredSize(new Dimension(previewWidth, previewHeight));
-//            });
-//            previewPanels.forEach((key,value)->{
-//                value.setPreferredSize(new Dimension(previewWidth, previewHeight+30));
-//            });
-//
-//            contentJPanel.revalidate();
-//        }
-//    }
-//
 
 
     @Autowired
     private CameraPointMapper cameraPointMapper;
+
     private class ScanQrcodeAction implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent e) {
@@ -495,25 +400,13 @@ public class MainApp extends JFrame {
                 @Override
                 public void run() {
                     cameraScanRets = new HashMap<>();
-                    for (Camera camera:camerasSelected){
+                    for (Camera camera : camerasSelected) {
+                        scanQrcodeByCamera(camera);
                         new Thread(new Runnable() {
                             @Override
                             public void run() {
 
-                                DefaultMutableTreeNode cameraNode = find(root_node, camera.getIp());
-                                cameraNode.removeAllChildren();
-                                myDefaultTreeModel.reload();
-                                List<CameraPoint> cameraPoints = cameraPointMapper.selectByIp(camera.getIp());
-                                if(cameraPoints ==null || cameraPoints.size()==0){
-                                    return;
-                                }
-                                List<ScanRet> scanRetList = new ArrayList<>();
-                                scanQrcodeByPoint(camera,cameraPoints,0,scanRetList);
-                                System.out.println(scanRetList.size());
-                                CameraScanRet cameraScanRet = new CameraScanRet();
-                                cameraScanRet.setCamera(camera);
-                                cameraScanRet.setScanRetList(scanRetList);
-                                cameraScanRets.put(camera.getIp(),cameraScanRet);
+
                             }
                         }).start();
                     }
@@ -521,6 +414,23 @@ public class MainApp extends JFrame {
                 }
             }).start();
         }
+    }
+
+    void  scanQrcodeByCamera(Camera camera){
+        DefaultMutableTreeNode cameraNode = find(root_node, camera.getIp());
+        cameraNode.removeAllChildren();
+        myDefaultTreeModel.reload();
+        List<CameraPoint> cameraPoints = cameraPointMapper.selectByIp(camera.getIp());
+        if (cameraPoints == null || cameraPoints.size() == 0) {
+            return;
+        }
+        List<ScanRet> scanRetList = new ArrayList<>();
+        scanQrcodeByPoint(camera, cameraPoints, 0, scanRetList);
+        System.out.println(scanRetList.size());
+        CameraScanRet cameraScanRet = new CameraScanRet();
+        cameraScanRet.setCamera(camera);
+        cameraScanRet.setScanRetList(scanRetList);
+        cameraScanRets.put(camera.getIp(), cameraScanRet);
     }
 
 
@@ -545,29 +455,30 @@ public class MainApp extends JFrame {
         Result[] results = null;
         BufferedImage bufferedImage = null;
         int num = 0;
-        do{
+        do {
             bufferedImage = netUtils.getBufferedImage(camera);
             results = QrcodeUtils.decodeQRcode(bufferedImage);
             ++num;
-            System.out.println("第"+num+"次尝试");
-        }while (results ==null && num<5);
+            System.out.println("第" + num + "次尝试");
+        } while (results == null && num < 5);
 
-        if( results!=null){
+        if (results != null) {
 
-            if(cameraPoints.get(idx).getTestQrCount() > results.length){
+            if (cameraPoints.get(idx).getTestQrCount() > results.length) {
                 System.err.println("扫到的结果与预置结果不一样");
             }
-        }else{
+        } else {
             System.err.println("没有扫到二维码");
         }
 
         //处理结果
         CameraPoint cameraPoint = cameraPoints.get(idx);
         DefaultMutableTreeNode cameraNode = find(root_node, camera.getIp());
-        DefaultMutableTreeNode pointNode = find(cameraNode, "扫描点："+cameraPoint.getName());;
-        if(pointNode == null){
+        DefaultMutableTreeNode pointNode = find(cameraNode, "扫描点：" + cameraPoint.getName());
+        ;
+        if (pointNode == null) {
 
-            pointNode = new DefaultMutableTreeNode("扫描点："+cameraPoint.getName());
+            pointNode = new DefaultMutableTreeNode("扫描点：" + cameraPoint.getName());
         }
         if (results != null) {
 
@@ -577,7 +488,7 @@ public class MainApp extends JFrame {
             }
 
             bufferedImage = QrcodeUtils.printImg(bufferedImage, results);
-        }else{
+        } else {
             DefaultMutableTreeNode newNode = new DefaultMutableTreeNode("无");
             pointNode.add(newNode);
         }
@@ -594,13 +505,13 @@ public class MainApp extends JFrame {
             imgViewForm.showImage(cameraPoint, bufferedImage, results);
         }
 
-        if (idx+1 < cameraPoints.size()) {
+        if (idx + 1 < cameraPoints.size()) {
             //递归调用其他点
             scanQrcodeByPoint(camera, cameraPoints, idx + 1, scanRetList);
 
         } else {
             //归位,回到最初的位置
-            netUtils.gotoPoint(camera,cameraPoints.get(0).getName());
+            netUtils.gotoPoint(camera, cameraPoints.get(0).getName());
         }
         return scanRetList;
     }
